@@ -1477,11 +1477,11 @@ window.Sizzle = Sizzle;
 
 (function() { 
 
-var ValidatorObj = (function() {
+var ValidatorObj = function() {
     return {
         init: function(className, error, test, options) {
             if(typeof test === 'function'){
-                this.options = options;
+                this.options = options ? options : {};
                 this._test = test;
             } else {
                 this.options = test;
@@ -1516,11 +1516,12 @@ var ValidatorObj = (function() {
                 });}
         }
     }
-})();
+};
 
 var Validator = function(className, error, test, options) {
-    ValidatorObj.init(className, error, test, options);
-    return ValidatorObj;
+    validatorObj = ValidatorObj();
+    validatorObj.init(className, error, test, options);
+    return validatorObj;
 };
 
 window.Validator = Validator;
@@ -1569,9 +1570,6 @@ window.Validator = Validator;
                 }
             } ,
             validate : function() {
-                console.log(getFormElements(this.form));
-                alert("elements");
-                
                 var result = false;
                 var useTitles = this.options.useTitles;
                 var callback = this.options.onElementValidate;
@@ -1597,9 +1595,6 @@ window.Validator = Validator;
                             onElementValidate : callback
                         });
                     }) );
-                    
-                    console.log(result);
-                    alert("results done");
                 }
                 if(!result && this.options.focusOnError) {
                     getFormElements(this.form).findAll(function(elm){
@@ -1629,9 +1624,11 @@ window.Validator = Validator;
             
             test : function(name, elm, useTitle) {
                 var v = ValidationObj.get(name);
-                var prop = '__advice'+name;//.camelize();
-                try {
+                var prop = '__advice'+name;//camelize();
+                try {                    
                     if(ValidationObj.isVisible(elm) && !v.test(elm.value, elm)) {
+                        console.log("VALIDATION FAILED");
+                        
                         if(!elm[prop]) {
                             var advice = ValidationObj.getAdvice(name, elm);
                             if(advice === null) {
@@ -1710,8 +1707,8 @@ window.Validator = Validator;
             },
             addAllThese : function(validators) {
                 var nv = {};
-                iterate(validators,function(value) {
-                    nv[value[0]] = Validator(value[0], value[1], value[2], (value.length > 3 ? value[3] : {}));
+                iterate(validators, function(value) {
+                    nv[ value[0] ] = Validator(value[0], value[1], value[2], (value.length > 3 ? value[3] : {}));
                 });
                 extendObject(ValidationObj.methods, nv);
             },
@@ -1727,13 +1724,11 @@ window.Validator = Validator;
     
     
     ValidationObj.add('IsEmpty', '', function(v) {
-        console.log("testing isEmpty for " + v);
         return  ((v == null) || (v.length == 0)); // || /^\s+$/.test(v));
     });
 
     ValidationObj.addAllThese([
         ['required', 'This is a required field.', function(v) {
-            console.log("validationg required");
             return !ValidationObj.get('IsEmpty').test(v);
         }],
         ['validate-number', 'Please enter a valid number in this field.', function(v) {
@@ -1837,10 +1832,6 @@ function extendObject (destination, source) {
   return destination;
 }
 
-function toArr(){
-    
-}
-
 var retVal = function (x) {
     return x;
 }
@@ -1858,16 +1849,19 @@ function iterate(iterable, callback) {
 
 function all(iterator) {
     var result = true;
-    console.log("result starts at "+result);
+    
+    if (!iterator) {
+        return false;
+    }
+    
     iterate( iterator, function(value) {
       result = result && value;
-      console.log("result is now "+result);
       if (!result) throw $break;
     });
     return result;
 }
 
-function any (iterator) {
+function any (iterator, callback) {
     var result = true;
     iterate(iterator, function(value, index) {
       result = value;
@@ -1881,8 +1875,6 @@ function collect(iterator, callback) {
       val = callback(value);
       results.push(val);
     });
-    console.log(results);
-    alert("collect results");
     return results;
  }
 
