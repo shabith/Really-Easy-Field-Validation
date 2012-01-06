@@ -1565,7 +1565,6 @@ window.Validator = Validator;
             "form" : form,
             
             validate : function() {
-                alert("i'm in");
                 var result = false;
                 var useTitles = this.options.useTitles;
                 var callback = this.options.onElementValidate;
