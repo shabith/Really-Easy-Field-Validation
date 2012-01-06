@@ -1477,8 +1477,10 @@ window.Sizzle = Sizzle;
 
 (function() { 
 
-var Validator = function(className, error, test, options) {
-    if(typeof test === 'function'){
+var ValidatorObj = (function() {
+    return {
+        init: function(className, error, test, options) {
+            if(typeof test === 'function'){
                 this.options = options;
                 this._test = test;
             } else {
@@ -1487,11 +1489,10 @@ var Validator = function(className, error, test, options) {
             }
             this.error = error || 'Validation failed.';
             this.className = className;
-    
-    return {
+        },
 	test : function(v, elm) {
             return (this._test(v,elm) && all(this.options, function(p){
-                return Validator.methods[p.key] ? Validator.methods[p.key](v,elm,p.value) : true;
+                return ValidatorObj.methods[p.key] ? ValidatorObj.methods[p.key](v,elm,p.value) : true;
             }));
 	},
         methods : {
@@ -1508,14 +1509,20 @@ var Validator = function(className, error, test, options) {
                 });},
             'is' : function(v,elm,opt) {return v === opt;},
             isNot : function(v,elm,opt) {return v !== opt;},
-            equalToField : function(v,elm,opt) {return v === $F(opt);},
-            notEqualToField : function(v,elm,opt) {return v !== $F(opt);},
+            equalToField : function(v,elm,opt) {return v === opt.value;},
+            notEqualToField : function(v,elm,opt) {return v !== opt.value;},
             include : function(v,elm,opt) {return all(iteratable(opt),function(value) {
                     return Validation.get(value).test(v,elm);
                 });}
         }
     }
-}
+})();
+
+var Validator = function(className, error, test, options) {
+    ValidatorObj.init(className, error, test, options);
+    return ValidatorObj;
+};
+
 window.Validator = Validator;
 })();
 
@@ -1541,10 +1548,7 @@ window.Validator = Validator;
                     onFormValidate : function(result, form) {},
                     onElementValidate : function(result, elm) {}
                 }, options || {});
-                this.form = Sizzle("#"+form)[0];
-        
-                console.log(this.form);
-        
+                this.form = Sizzle("#"+form)[0];        
         
                 if(this.options.onSubmit) {
                     observeEvent(this.form,'submit',onSubmit.bind(this),false);
@@ -1573,8 +1577,6 @@ window.Validator = Validator;
                 var callback = this.options.onElementValidate;
                 if(this.options.stopOnFirst) {
                     result = all( getFormElements(this.form), function(elm) {
-                        console.log("stop on first");
-                        console.log(elem);
                         return ValidationObj.validateElm(elm,{
                             useTitle : useTitles, 
                             onElementValidate : callback
@@ -1589,19 +1591,15 @@ window.Validator = Validator;
                                         return ValidationObj.validate(elm,{useTitle : useTitles, onElementValidate : callback});
                                     }, this).all();
                      */
-                    console.log("validate all");
-                    result = collect( getFormElements(this.form), function(elm) {    
-                        console.log(elm);
+                    result = all( collect( getFormElements(this.form), function(elm) {
                         return ValidationObj.validateElm(elm,{
                             useTitle : useTitles, 
                             onElementValidate : callback
                         });
-                    });
+                    }) );
+                    alert("results done");
                 }
                 if(!result && this.options.focusOnError) {
-                    console.log(getFormElements(this.form));
-                    alert("elements");
-                    
                     getFormElements(this.form).findAll(function(elm){
                         return Sizzle(elm).hasClassName('validation-failed');
                     }).first().focus();
@@ -1634,7 +1632,7 @@ window.Validator = Validator;
                 var v = ValidationObj.get(name);
                 var prop = '__advice'+name;//.camelize();
                 try {
-                    if(ValidationObj.isVisible(elm) && !v.test($F(elm), elm)) {
+                    if(ValidationObj.isVisible(elm) && !v.test(elm.value, elm)) {
                         if(!elm[prop]) {
                             var advice = ValidationObj.getAdvice(name, elm);
                             if(advice === null) {
@@ -1664,15 +1662,15 @@ window.Validator = Validator;
                             }
                         }
                         elm[prop] = true;
-                        elm.removeClassName('validation-passed');
-                        elm.addClassName('validation-failed');
+                        removeClassName(elm, 'validation-passed');
+                        addClassName(elm, 'validation-failed');
                         return false;
                     } else {
                         var advice = ValidationObj.getAdvice(name, elm);
                         if(advice != null) advice.hide();
                         elm[prop] = '';
-                        elm.removeClassName('validation-failed');
-                        elm.addClassName('validation-passed');
+                        removeClassName(elm, 'validation-failed');
+                        addClassName(elm,'validation-passed');
                         return true;
                     }
                 } catch(e) {
@@ -1702,8 +1700,8 @@ window.Validator = Validator;
                         advice.hide();
                         elm[prop] = '';
                     }
-                    elm.removeClassName('validation-failed');
-                    elm.removeClassName('validation-passed');
+                    removeClassName(elm,'validation-failed');
+                    removeClassName(elm,'validation-passed');
                 });
             },
             add : function(className, error, test, options) {
@@ -1787,7 +1785,7 @@ window.Validator = Validator;
                 var p = elm.parentNode;
                 var options = p.getElementsByTagName('INPUT');
                 return iteratable(options).any(function(elm) {
-                    return $F(elm);
+                    return elem.value;
                 });
             }]
             ]);
@@ -1800,6 +1798,34 @@ window.Validator = Validator;
     
     window.Validation = Validation;
 })();
+
+function addClassName (elm, className) {
+    rspace = /\s+/;
+    if ( className && typeof className === "string" ) {
+        classNames = className.split( rspace );
+
+        if ( elm.nodeType === 1 ) {
+            if ( !elm.className && classNames.length === 1 ) {
+                elm.className = className;
+
+            } else {
+                setClass = " " + elm.className + " ";
+
+                for ( c = 0, cl = classNames.length; c < cl; c++ ) {
+                    if ( !~setClass.indexOf( " " + classNames[ c ] + " " ) ) {
+                        setClass += classNames[ c ] + " ";
+                    }
+                }
+                elm.className;
+            }
+        }
+    }
+}
+
+function removeClassName(elm, className){
+    elm.className.replace(new RegExp(className), "");
+}
+
 
 function extendObject (destination, source) {
   for (var property in source) {
@@ -1827,13 +1853,13 @@ function iterate(iterable, callback) {
     }
 }
 
-function all(iterator, callback) {
+function all(iterator) {
     var result = true;
     iterate( iterator, function(value) {
       result = result && value;
       if (!result) throw $break;
     });
-    return callback(result);
+    return result;
 }
 
 function collect(iterator, callback) {
@@ -1843,12 +1869,16 @@ function collect(iterator, callback) {
       results.push(val);
     });
     
-    return callback(results);
+    return results;
  }
 
 function classNamesList(elem){
-    console.log(elem);
-    return elem.className.split();
+    try{
+        return elem.className.split();
+    }
+    catch(e) {
+        console.log(elem);
+    }
 }
 
 function getFormElements(form_elem) {
