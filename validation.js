@@ -1520,40 +1520,8 @@ window.Validator = Validator;
 })();
 
 (function() { 
-
-    var Validation = function(form, options){
-        var options = extendObject({
-            onSubmit : true,
-            stopOnFirst : false,
-            immediate : false,
-            focusOnError : true,
-            useTitles : false,
-            onFormValidate : function(result, form) {},
-            onElementValidate : function(result, elm) {}
-        }, options || {});
-        var form = Sizzle("#"+form)[0];
         
-        console.log(this.form);
-        
-        
-        if(options.onSubmit) {
-            observeEvent(this.form,'submit',onSubmit.bind(this),false);
-        }
-        if(options.immediate) {
-            var useTitles = this.options.useTitles;
-            var callback = this.options.onElementValidate;
-            
-            
-            iterate(getFormElements(this.form),function(input) { // Thanks Mike!
-                observeEvent(input, 'blur', function(ev) {
-                    Validation.validateElm(Event.element(ev),{
-                        useTitle : useTitles, 
-                        onElementValidate : callback
-                    });
-                });
-            });
-        }
-        
+    var ValidationObj = (function() {
         function onSubmit (ev){
                 if(!this.validate()) {
                     Event.stop(ev);
@@ -1561,31 +1529,74 @@ window.Validator = Validator;
             };
         
         return {
-            "options" : options,
-            "form" : form,
+            options : {},
+            form : null, 
+            init: function(form, options) {
+                this.options = extendObject({
+                    onSubmit : true,
+                    stopOnFirst : false,
+                    immediate : false,
+                    focusOnError : true,
+                    useTitles : false,
+                    onFormValidate : function(result, form) {},
+                    onElementValidate : function(result, elm) {}
+                }, options || {});
+                this.form = Sizzle("#"+form)[0];
+        
+                console.log(this.form);
+        
+        
+                if(this.options.onSubmit) {
+                    observeEvent(this.form,'submit',onSubmit.bind(this),false);
+                }
+                if(this.options.immediate) {
+                    var useTitles = this.options.useTitles;
+                    var callback = this.options.onElementValidate;
             
+            
+                    iterate(getFormElements(this.form),function(input) { // Thanks Mike!
+                        observeEvent(input, 'blur', function(ev) {
+                            ValidationObj.validateElm(ev, {
+                                useTitle : useTitles, 
+                                onElementValidate : callback
+                            });
+                        });
+                    });
+                }
+            } ,
             validate : function() {
+                console.log(getFormElements(this.form));
+                alert("elements");
+                
                 var result = false;
                 var useTitles = this.options.useTitles;
                 var callback = this.options.onElementValidate;
                 if(this.options.stopOnFirst) {
-                    console.log(getFormElements(this.form));
-                    alert("elements");
-                    
                     result = all( getFormElements(this.form), function(elm) {
+                        console.log("stop on first");
                         console.log(elem);
-                        return Validation.validateElm(elm,{
+                        return ValidationObj.validateElm(elm,{
                             useTitle : useTitles, 
                             onElementValidate : callback
                         });
                     });
-                } else {                    
-                    result = all( collect( getFormElements(this.form),function(elm) {
-                        return Validation.validateElm(elm,{
+                } else {
+                    /*
+                     * result = Form.getElements(this.form).collect(function(elm) {
+                                        if (elm.hasClassName('local-validation') && !this.isElementInForm(elm, this.form)) {
+                                            return true;
+                                        }
+                                        return ValidationObj.validate(elm,{useTitle : useTitles, onElementValidate : callback});
+                                    }, this).all();
+                     */
+                    console.log("validate all");
+                    result = collect( getFormElements(this.form), function(elm) {    
+                        console.log(elm);
+                        return ValidationObj.validateElm(elm,{
                             useTitle : useTitles, 
                             onElementValidate : callback
                         });
-                    }));
+                    });
                 }
                 if(!result && this.options.focusOnError) {
                     console.log(getFormElements(this.form));
@@ -1598,34 +1609,37 @@ window.Validator = Validator;
                 this.options.onFormValidate(result, this.form);
                 return result;
             },
-            reset : function() {
-                iterate(getFormElements(this.form),Validation.reset);
-            },
             validateElm : function(elm, options){
+                console.log("validateElem");
+                console.log(elm);
+                
                 options = extendObject({
                     useTitle : false,
                     onElementValidate : function(result, elm) {}
                 }, options || {});
-               
-                elm = Sizzle(elm)[0];
-                var cn = classNamesList(elm);//elm.classNames();
+                
+                var cn = classNamesList(elm);
                 var result = all(cn,function(value) {
-                    var test = Validation.test(value,elm,options.useTitle);
+                    var test = ValidationObj.test(value,elm,options.useTitle);
                     options.onElementValidate(test, elm);
                     return test;
                 });
                 return result;
             },
+            reset : function() {
+                iterate(getFormElements(this.form),ValidationObj.reset);
+            },
+            
             test : function(name, elm, useTitle) {
-                var v = Validation.get(name);
-                var prop = '__advice'+name.camelize();
+                var v = ValidationObj.get(name);
+                var prop = '__advice'+name;//.camelize();
                 try {
-                    if(Validation.isVisible(elm) && !v.test($F(elm), elm)) {
+                    if(ValidationObj.isVisible(elm) && !v.test($F(elm), elm)) {
                         if(!elm[prop]) {
-                            var advice = Validation.getAdvice(name, elm);
+                            var advice = ValidationObj.getAdvice(name, elm);
                             if(advice === null) {
                                 var errorMsg = useTitle ? ((elm && elm.title) ? elm.title : v.error) : v.error;
-                                advice = '<div class="validation-advice" id="advice-' + name + '-' + Validation.getElmID(elm) +'" style="display:none">' + errorMsg + '</div>';
+                                advice = '<div class="validation-advice" id="advice-' + name + '-' + ValidationObj.getElmID(elm) +'" style="display:none">' + errorMsg + '</div>';
                                 switch (elm.type.toLowerCase()) {
                                     case 'checkbox':
                                     case 'radio':
@@ -1639,7 +1653,7 @@ window.Validator = Validator;
                                     default:
                                         new Insertion.After(elm, advice);
                                 }
-                                advice = Validation.getAdvice(name, elm);
+                                advice = ValidationObj.getAdvice(name, elm);
                             }
                             if(typeof Effect == 'undefined') {
                                 advice.style.display = 'block';
@@ -1654,7 +1668,7 @@ window.Validator = Validator;
                         elm.addClassName('validation-failed');
                         return false;
                     } else {
-                        var advice = Validation.getAdvice(name, elm);
+                        var advice = ValidationObj.getAdvice(name, elm);
                         if(advice != null) advice.hide();
                         elm[prop] = '';
                         elm.removeClassName('validation-failed');
@@ -1667,13 +1681,13 @@ window.Validator = Validator;
             },
             isVisible : function(elm) {
                 while(elm.tagName != 'BODY') {
-                    if(!Sizzle(elm)[0].visible()) return false;
+                    if(!visible(elm)) return false;
                     elm = elm.parentNode;
                 }
                 return true;
             },
             getAdvice : function(name, elm) {
-                return Sizzle('advice-' + name + '-' + Validation.getElmID(elm))[0] || Sizzle('advice-' + Validation.getElmID(elm))[0];
+                return Sizzle('advice-' + name + '-' + ValidationObj.getElmID(elm))[0] || Sizzle('advice-' + ValidationObj.getElmID(elm))[0];
             },
             getElmID : function(elm) {
                 return elm.id ? elm.id : elm.name;
@@ -1684,7 +1698,7 @@ window.Validator = Validator;
                 iterate(cn,function(value) {
                     var prop = '__advice'+value.camelize();
                     if(elm[prop]) {
-                        var advice = Validation.getAdvice(value, elm);
+                        var advice = ValidationObj.getAdvice(value, elm);
                         advice.hide();
                         elm[prop] = '';
                     }
@@ -1695,17 +1709,17 @@ window.Validator = Validator;
             add : function(className, error, test, options) {
                 var nv = {};
                 nv[className] = Validator(className, error, test, options);
-                extendObject(Validation.methods, nv);
+                extendObject(ValidationObj.methods, nv);
             },
             addAllThese : function(validators) {
                 var nv = {};
                 iterate(validators,function(value) {
                     nv[value[0]] = Validator(value[0], value[1], value[2], (value.length > 3 ? value[3] : {}));
                 });
-                extendObject(Validation.methods, nv);
+                extendObject(ValidationObj.methods, nv);
             },
             get : function(name) {
-                return  Validation.methods[name] ? Validation.methods[name] : Validation.methods['_LikeNoIDIEverSaw_'];
+                return  ValidationObj.methods[name] ? ValidationObj.methods[name] : ValidationObj.methods['_LikeNoIDIEverSaw_'];
             },
             methods : {
                 '_LikeNoIDIEverSaw_' : Validator('_LikeNoIDIEverSaw_','',{})
@@ -1713,30 +1727,30 @@ window.Validator = Validator;
         
         }
     
-        Validation.add('IsEmpty', '', function(v) {
+        ValidationObj.add('IsEmpty', '', function(v) {
             return  ((v == null) || (v.length == 0)); // || /^\s+$/.test(v));
         });
 
-        Validation.addAllThese([
+        ValidationObj.addAllThese([
             ['required', 'This is a required field.', function(v) {
-                return !Validation.get('IsEmpty').test(v);
+                return !ValidationObj.get('IsEmpty').test(v);
             }],
             ['validate-number', 'Please enter a valid number in this field.', function(v) {
-                return Validation.get('IsEmpty').test(v) || (!isNaN(v) && !/^\s+$/.test(v));
+                return ValidationObj.get('IsEmpty').test(v) || (!isNaN(v) && !/^\s+$/.test(v));
             }],
             ['validate-digits', 'Please use numbers only in this field. please avoid spaces or other characters such as dots or commas.', function(v) {
-                return Validation.get('IsEmpty').test(v) ||  !/[^\d]/.test(v);
+                return ValidationObj.get('IsEmpty').test(v) ||  !/[^\d]/.test(v);
             }],
             ['validate-alpha', 'Please use letters only (a-z) in this field.', function (v) {
-                return Validation.get('IsEmpty').test(v) ||  /^[a-zA-Z]+$/.test(v)
+                return ValidationObj.get('IsEmpty').test(v) ||  /^[a-zA-Z]+$/.test(v)
             }],
             ['validate-alphanum', 'Please use only letters (a-z) or numbers (0-9) only in this field. No spaces or other characters are allowed.', function(v) {
-                return Validation.get('IsEmpty').test(v) ||  !/\W/.test(v)
+                return ValidationObj.get('IsEmpty').test(v) ||  !/\W/.test(v)
             }],
             ['validate-date', 'Please enter a valid date.', function(v) {
                 //var test = new Date(v);
-                //return Validation.get('IsEmpty').test(v) || !isNaN(test);
-                if(Validation.get('IsEmpty').test(v)) return true;
+                //return ValidationObj.get('IsEmpty').test(v) || !isNaN(test);
+                if(ValidationObj.get('IsEmpty').test(v)) return true;
                 var regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
                 if(!regex.test(v)) return false;
                 var d = new Date(v);
@@ -1745,13 +1759,13 @@ window.Validator = Validator;
                 (parseInt(RegExp.$3, 10) == d.getFullYear() );
             }],
             ['validate-email', 'Please enter a valid email address. For example fred@domain.com .', function (v) {
-                return Validation.get('IsEmpty').test(v) || /\w{1,}[@][\w\-]{1,}([.]([\w\-]{1,})){1,3}$/.test(v)
+                return ValidationObj.get('IsEmpty').test(v) || /\w{1,}[@][\w\-]{1,}([.]([\w\-]{1,})){1,3}$/.test(v)
             }],
             ['validate-url', 'Please enter a valid URL.', function (v) {
-                return Validation.get('IsEmpty').test(v) || /^(http|https|ftp):\/\/(([A-Z0-9][A-Z0-9_-]*)(\.[A-Z0-9][A-Z0-9_-]*)+)(:(\d+))?\/?/i.test(v)
+                return ValidationObj.get('IsEmpty').test(v) || /^(http|https|ftp):\/\/(([A-Z0-9][A-Z0-9_-]*)(\.[A-Z0-9][A-Z0-9_-]*)+)(:(\d+))?\/?/i.test(v)
             }],
             ['validate-date-au', 'Please use this date format: dd/mm/yyyy. For example 17/03/2006 for the 17th of March, 2006.', function(v) {
-                if(Validation.get('IsEmpty').test(v)) return true;
+                if(ValidationObj.get('IsEmpty').test(v)) return true;
                 var regex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
                 if(!regex.test(v)) return false;
                 var d = new Date(v.replace(regex, '$2/$1/$3'));
@@ -1764,10 +1778,10 @@ window.Validator = Validator;
                 // [$]1###+[.##]
                 // [$]0.##
                 // [$].##
-                return Validation.get('IsEmpty').test(v) ||  /^\$?\-?([1-9]{1}[0-9]{0,2}(\,[0-9]{3})*(\.[0-9]{0,2})?|[1-9]{1}\d*(\.[0-9]{0,2})?|0(\.[0-9]{0,2})?|(\.[0-9]{1,2})?)$/.test(v)
+                return ValidationObj.get('IsEmpty').test(v) ||  /^\$?\-?([1-9]{1}[0-9]{0,2}(\,[0-9]{3})*(\.[0-9]{0,2})?|[1-9]{1}\d*(\.[0-9]{0,2})?|0(\.[0-9]{0,2})?|(\.[0-9]{1,2})?)$/.test(v)
             }],
             ['validate-selection', 'Please make a selection', function(v,elm){
-                return elm.options ? elm.selectedIndex > 0 : !Validation.get('IsEmpty').test(v);
+                return elm.options ? elm.selectedIndex > 0 : !ValidationObj.get('IsEmpty').test(v);
             }],
             ['validate-one-required', 'Please select one of the above options.', function (v,elm) {
                 var p = elm.parentNode;
@@ -1777,7 +1791,13 @@ window.Validator = Validator;
                 });
             }]
             ]);
-    }
+    })();
+    
+    var Validation = function(form, options){
+        ValidationObj.init(form, options);
+        return ValidationObj;
+    };
+    
     window.Validation = Validation;
 })();
 
@@ -1796,6 +1816,10 @@ var retVal = function (x) {
     return x;
 }
 
+function visible(elem) {
+    return elem.style.display != 'none';
+}
+
 function iterate(iterable, callback) {
     for (var i=0; i < iterable.length; i++) {
         val = iterable[i];
@@ -1803,26 +1827,27 @@ function iterate(iterable, callback) {
     }
 }
 
-function all(iterator) {
+function all(iterator, callback) {
     var result = true;
     iterate( iterator, function(value) {
       result = result && value;
       if (!result) throw $break;
     });
-    return result;
+    return callback(result);
 }
 
-function collect(iterator) {
+function collect(iterator, callback) {
     var results = [];
     iterate(iterator, function(value, index) {
-      results.push(value);
+      val = callback(value);
+      results.push(val);
     });
-    return results;
+    
+    return callback(results);
  }
 
 function classNamesList(elem){
     console.log(elem);
-    alert(elem);
     return elem.className.split();
 }
 
