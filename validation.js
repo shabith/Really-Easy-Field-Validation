@@ -1597,9 +1597,10 @@ window.Validator = Validator;
                     }) );
                 }
                 if(!result && this.options.focusOnError) {
-                    getFormElements(this.form).findAll(function(elm){
-                        return Sizzle(elm).hasClassName('validation-failed');
-                    }).first().focus();
+//                    TODO: punting on this right now
+//                    getFormElements(this.form).findAll(function(elm){
+//                        return Sizzle(elm).hasClassName('validation-failed');
+//                    }).first().focus();
                 }
                 this.options.onFormValidate(result, this.form);
                 return result;
@@ -1631,24 +1632,36 @@ window.Validator = Validator;
                         
                         if(!elm[prop]) {
                             var advice = ValidationObj.getAdvice(name, elm);
-                            if(advice === null) {
+                            if(advice === null || typeof advice =="undefined") {
+                                console.log("no advice");
                                 var errorMsg = useTitle ? ((elm && elm.title) ? elm.title : v.error) : v.error;
-                                advice = '<div class="validation-advice" id="advice-' + name + '-' + ValidationObj.getElmID(elm) +'" style="display:none">' + errorMsg + '</div>';
+                                
+                                advice = document.createElement("div");
+                                advice.className='validation-advice';
+                                advice.id="advice-' + name + '-' + ValidationObj.getElmID(elm) +'";
+                                advice.style="display:none";
+                                advice.innerHTML=errorMsg;
+                                //'<div class="validation-advice" id="advice-' + name + '-' + ValidationObj.getElmID(elm) +'" style="display:none">' + errorMsg + '</div>';
                                 switch (elm.type.toLowerCase()) {
                                     case 'checkbox':
                                     case 'radio':
                                         var p = elm.parentNode;
                                         if(p) {
-                                            new Insertion.Bottom(p, advice);
+                                            p.appendChild(advice);
+                                            //new Insertion.Bottom(p, advice);
                                         } else {
-                                            new Insertion.After(elm, advice);
+                                            elm.appendChild(advice);
+                                            //new Insertion.After(elm, advice);
                                         }
                                         break;
                                     default:
-                                        new Insertion.After(elm, advice);
+                                        console.log(elm);
+                                        alert(elm);
+                                        elm.parentNode.insertBefore(advice,elm);
+                                        console.log("out");
                                 }
-                                advice = ValidationObj.getAdvice(name, elm);
                             }
+
                             if(typeof Effect == 'undefined') {
                                 advice.style.display = 'block';
                             } else {
@@ -1856,7 +1869,6 @@ function all(iterator) {
     
     iterate( iterator, function(value) {
       result = result && value;
-      if (!result) throw $break;
     });
     return result;
 }
