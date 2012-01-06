@@ -1478,21 +1478,19 @@ window.Sizzle = Sizzle;
 (function() { 
 
 var Validator = function(className, error, test, options) {
-    
-    return {
-        initialize : function(className, error, test, options) {
-            if(typeof test === 'function'){
-                this.options = $H(options);
+    if(typeof test === 'function'){
+                this.options = options;
                 this._test = test;
             } else {
-                this.options = $H(test);
+                this.options = test;
                 this._test = function(){return true;};
             }
             this.error = error || 'Validation failed.';
             this.className = className;
-	},
+    
+    return {
 	test : function(v, elm) {
-            return (this._test(v,elm) && this.options.all(function(p){
+            return (this._test(v,elm) && all(this.options, function(p){
                 return Validator.methods[p.key] ? Validator.methods[p.key](v,elm,p.value) : true;
             }));
 	},
@@ -1502,7 +1500,7 @@ var Validator = function(className, error, test, options) {
             maxLength : function(v,elm,opt) {return v.length <= opt;},
             min : function(v,elm,opt) {return v >= parseFloat(opt);}, 
             max : function(v,elm,opt) {return v <= parseFloat(opt);},
-            notOneOf : function(v,elm,opt) {return iteratable(opt).all(function(value) {
+            notOneOf : function(v,elm,opt) {return all(iteratable(opt), function(value) {
                     return v !== value;
                 });},
             oneOf : function(v,elm,opt) {return iteratable(opt).any(function(value) {
@@ -1512,7 +1510,7 @@ var Validator = function(className, error, test, options) {
             isNot : function(v,elm,opt) {return v !== opt;},
             equalToField : function(v,elm,opt) {return v === $F(opt);},
             notEqualToField : function(v,elm,opt) {return v !== $F(opt);},
-            include : function(v,elm,opt) {return iteratable(opt).all(function(value) {
+            include : function(v,elm,opt) {return all(iteratable(opt),function(value) {
                     return Validation.get(value).test(v,elm);
                 });}
         }
@@ -1524,60 +1522,77 @@ window.Validator = Validator;
 (function() { 
 
     var Validation = function(form, options){
-        return {
-            initialize : function(form, options){
-                this.options = extendObject({
-                    onSubmit : true,
-                    stopOnFirst : false,
-                    immediate : false,
-                    focusOnError : true,
-                    useTitles : false,
-                    onFormValidate : function(result, form) {},
-                    onElementValidate : function(result, elm) {}
-                }, options || {});
-                this.form = Sizzle(form);
-                if(this.options.onSubmit) {
-                    observeEvent(this.form,'submit',this.onSubmit.bind(this),false);
-                }
-                if(this.options.immediate) {
-                    var useTitles = this.options.useTitles;
-                    var callback = this.options.onElementValidate;
-                    iterate(Form.getElements(this.form),function(input) { // Thanks Mike!
-                        observeEvent(input, 'blur', function(ev) {
-                            Validation.validate(Event.element(ev),{
-                                useTitle : useTitles, 
-                                onElementValidate : callback
-                            });
-                        });
+        var options = extendObject({
+            onSubmit : true,
+            stopOnFirst : false,
+            immediate : false,
+            focusOnError : true,
+            useTitles : false,
+            onFormValidate : function(result, form) {},
+            onElementValidate : function(result, elm) {}
+        }, options || {});
+        var form = Sizzle("#"+form)[0];
+        
+        console.log(this.form);
+        
+        
+        if(options.onSubmit) {
+            observeEvent(this.form,'submit',onSubmit.bind(this),false);
+        }
+        if(options.immediate) {
+            var useTitles = this.options.useTitles;
+            var callback = this.options.onElementValidate;
+            
+            
+            iterate(getFormElements(this.form),function(input) { // Thanks Mike!
+                observeEvent(input, 'blur', function(ev) {
+                    Validation.validateElm(Event.element(ev),{
+                        useTitle : useTitles, 
+                        onElementValidate : callback
                     });
-                }
-            },
-            onSubmit :  function(ev){
+                });
+            });
+        }
+        
+        function onSubmit (ev){
                 if(!this.validate()) {
                     Event.stop(ev);
                 }
-            },
+            };
+        
+        return {
+            "options" : options,
+            "form" : form,
+            
             validate : function() {
+                alert("i'm in");
                 var result = false;
                 var useTitles = this.options.useTitles;
                 var callback = this.options.onElementValidate;
                 if(this.options.stopOnFirst) {
-                    result = Form.getElements(this.form).all(function(elm) {
-                        return Validation.validate(elm,{
+                    console.log(getFormElements(this.form));
+                    alert("elements");
+                    
+                    result = all( getFormElements(this.form), function(elm) {
+                        console.log(elem);
+                        return Validation.validateElm(elm,{
                             useTitle : useTitles, 
                             onElementValidate : callback
                         });
                     });
-                } else {
-                    result = Form.getElements(this.form).collect(function(elm) {
-                        return Validation.validate(elm,{
+                } else {                    
+                    result = all( collect( getFormElements(this.form),function(elm) {
+                        return Validation.validateElm(elm,{
                             useTitle : useTitles, 
                             onElementValidate : callback
                         });
-                    }).all();
+                    }));
                 }
                 if(!result && this.options.focusOnError) {
-                    Form.getElements(this.form).findAll(function(elm){
+                    console.log(getFormElements(this.form));
+                    alert("elements");
+                    
+                    getFormElements(this.form).findAll(function(elm){
                         return Sizzle(elm).hasClassName('validation-failed');
                     }).first().focus();
                 }
@@ -1585,16 +1600,17 @@ window.Validator = Validator;
                 return result;
             },
             reset : function() {
-                iterate(Form.getElements(this.form),Validation.reset);
+                iterate(getFormElements(this.form),Validation.reset);
             },
-            validate : function(elm, options){
+            validateElm : function(elm, options){
                 options = extendObject({
                     useTitle : false,
                     onElementValidate : function(result, elm) {}
                 }, options || {});
-                elm = Sizzle(elm);
-                var cn = elm.classNames();
-                var result = cn.all(function(value) {
+               
+                elm = Sizzle(elm)[0];
+                var cn = classNamesList(elm);//elm.classNames();
+                var result = all(cn,function(value) {
                     var test = Validation.test(value,elm,options.useTitle);
                     options.onElementValidate(test, elm);
                     return test;
@@ -1652,19 +1668,19 @@ window.Validator = Validator;
             },
             isVisible : function(elm) {
                 while(elm.tagName != 'BODY') {
-                    if(!Sizzle(elm).visible()) return false;
+                    if(!Sizzle(elm)[0].visible()) return false;
                     elm = elm.parentNode;
                 }
                 return true;
             },
             getAdvice : function(name, elm) {
-                return Sizzle('advice-' + name + '-' + Validation.getElmID(elm)) || Sizzle('advice-' + Validation.getElmID(elm));
+                return Sizzle('advice-' + name + '-' + Validation.getElmID(elm))[0] || Sizzle('advice-' + Validation.getElmID(elm))[0];
             },
             getElmID : function(elm) {
                 return elm.id ? elm.id : elm.name;
             },
             reset : function(elm) {
-                elm = Sizzle(elm);
+                elm = Sizzle(elm)[0];
                 var cn = elm.classNames();
                 iterate(cn,function(value) {
                     var prop = '__advice'+value.camelize();
@@ -1773,11 +1789,46 @@ function extendObject (destination, source) {
   return destination;
 }
 
+function toArr(){
+    
+}
+
+var retVal = function (x) {
+    return x;
+}
+
 function iterate(iterable, callback) {
     for (var i=0; i < iterable.length; i++) {
         val = iterable[i];
         callback(val);
     }
+}
+
+function all(iterator) {
+    var result = true;
+    iterate( iterator, function(value) {
+      result = result && value;
+      if (!result) throw $break;
+    });
+    return result;
+}
+
+function collect(iterator) {
+    var results = [];
+    iterate(iterator, function(value, index) {
+      results.push(value);
+    });
+    return results;
+ }
+
+function classNamesList(elem){
+    console.log(elem);
+    alert(elem);
+    return elem.className.split();
+}
+
+function getFormElements(form_elem) {
+    return Sizzle("input,select,button", form_elem);
 }
 
 function observeEvent(elem, eventName, callback) {
