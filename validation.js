@@ -1655,8 +1655,6 @@ window.Validator = Validator;
                                         }
                                         break;
                                     default:
-                                        console.log(elm);
-                                        alert(elm);
                                         elm.parentNode.insertBefore(advice,elm);
                                         console.log("out");
                                 }
