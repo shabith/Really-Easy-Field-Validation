@@ -271,14 +271,6 @@
                             });
                         });
                     } else {
-                        /*
-                     * result = Form.getElements(this.form).collect(function(elm) {
-                                        if (elm.hasClassName('local-validation') && !this.isElementInForm(elm, this.form)) {
-                                            return true;
-                                        }
-                                        return ValidationObj.validate(elm,{useTitle : useTitles, onElementValidate : callback});
-                                    }, this).all();
-                     */
                         result = PhonyPrototypeJs.all( PhonyPrototypeJs.collect( PhonyPrototypeJs.getFormElements(this.form), function(elm) {
                             return ValidationObj.validateElm( elm, {
                                 useTitle : useTitles, 
