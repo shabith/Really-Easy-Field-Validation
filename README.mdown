@@ -3,6 +3,7 @@ Self Contained Really Easy Field Validation
 This is a fork of [Really-Easy-Field-Validation](https://github.com/atetlaw/Really-Easy-Field-Validation) that is meant to be a stand alone implementation. 
 Unlike the original, you will only need to include validate.js, and are free from any dependency on Prototype.js
 
+There's also a minified version included that was minified by [JSMin](https://github.com/douglascrockford/JSMin).
 
 Instructions
 ------------
