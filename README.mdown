@@ -8,6 +8,7 @@ For the sake of ease, I am including Sizzle -- the engine behind jQuery selectio
 Here's a form validation script that is very easy to use.
 
 Instructions
+============
 
 The basic method is to attach to the form's onsubmit event, read out all the form elements' classes and perform validation if required. If a field fails validation, reveal field validation advice and prevent the form from submitting.
 
