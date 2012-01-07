@@ -31,8 +31,6 @@
 
     var PhonyPrototypeJs = {
         addClassName :function (elm, className) {
-            console.log("adding " + className + " to "+ elm.id);
-    
             rspace = /\s+/;
             if ( className && typeof className === "string" ) {
                 classNames = className.split( rspace );
@@ -53,8 +51,6 @@
                     }
                 }
             }
-    
-            console.log(elm.className);
         },
 
         removeClassName :function (elm, className){
@@ -140,8 +136,6 @@
             }
             document.addEventListener(eventName, callback, false);
         }
-
-
     };
 
 
