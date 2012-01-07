@@ -1477,6 +1477,116 @@ externSizzle= Sizzle;
 
 })();
 
+
+    var PhonyPrototypeJs = {
+        addClassName :function (elm, className) {
+            console.log("adding " + className + " to "+ elm.id);
+    
+            rspace = /\s+/;
+            if ( className && typeof className === "string" ) {
+                classNames = className.split( rspace );
+
+                if ( elm.nodeType === 1 ) {
+                    if ( !elm.className && classNames.length === 1 ) {
+                        elm.className = className;
+
+                    } else {
+                        setClass = " " + elm.className + " ";
+
+                        for ( c = 0, cl = classNames.length; c < cl; c++ ) {
+                            if ( !~setClass.indexOf( " " + classNames[ c ] + " " ) ) {
+                                setClass += classNames[ c ] + " ";
+                            }
+                        }
+                        elm.className = setClass;
+                    }
+                }
+            }
+    
+            console.log(elm.className);
+        },
+
+        removeClassName :function (elm, className){
+            elm.className.replace(new RegExp(className), "");
+        },
+
+
+        extendObject :function (destination, source) {
+            for (var property in source) {
+                destination[property] = source[property];
+            }
+            return destination;
+        },
+
+        retVal :function  (x) {
+            return x;
+        },
+
+        visible:function (elem) {
+            return elem.style.display != 'none';
+        },
+
+        iterate:function (iterable, callback) {
+            for (var i=0; i < iterable.length; i++) {
+                val = iterable[i];
+                callback(val);
+            }
+        },
+
+        all:function (iterator) {
+            var result = true;
+    
+            if (!iterator) {
+                return false;
+            }
+    
+            iterate( iterator, function(value) {
+                result = result && value;
+            });
+            return result;
+        },
+
+        any:function  (iterator, callback) {
+            var result = true;
+            iterate(iterator, function(value, index) {
+                result = value;
+            });
+            return result;
+        },
+
+        collect:function (iterator, callback) {
+            var results = [];
+            iterate(iterator, function(value, index) {
+                val = callback(value);
+                results.push(val);
+            });
+            return results;
+        },
+
+        classNamesList:function (elem){
+            try{
+                return elem.className.split(/\s/);
+            }
+            catch(e) {
+                console.log(elem);
+            }
+        },
+
+        getFormElements:function (form_elem) {
+            return Sizzle("input,select,button", form_elem);
+        },
+
+        observeEvent:function (elem, eventName, callback) {
+            if (!elem) {
+                elem=document;
+            }
+            document.addEventListener(eventName, callback, false);
+        }
+
+
+    };
+
+
 (function() { 
 
 var ValidatorObj = function() {
@@ -1817,107 +1927,5 @@ window.Validator = Validator;
     window.Validation = Validation;
 })();
 
-function addClassName (elm, className) {
-    console.log("adding " + className + " to "+ elm.id);
-    
-    rspace = /\s+/;
-    if ( className && typeof className === "string" ) {
-        classNames = className.split( rspace );
 
-        if ( elm.nodeType === 1 ) {
-            if ( !elm.className && classNames.length === 1 ) {
-                elm.className = className;
-
-            } else {
-                setClass = " " + elm.className + " ";
-
-                for ( c = 0, cl = classNames.length; c < cl; c++ ) {
-                    if ( !~setClass.indexOf( " " + classNames[ c ] + " " ) ) {
-                        setClass += classNames[ c ] + " ";
-                    }
-                }
-                elm.className = setClass;
-            }
-        }
-    }
-    
-    console.log(elm.className);
-}
-
-function removeClassName(elm, className){
-    elm.className.replace(new RegExp(className), "");
-}
-
-
-function extendObject (destination, source) {
-  for (var property in source) {
-    destination[property] = source[property];
-  }
-  return destination;
-}
-
-var retVal = function (x) {
-    return x;
-}
-
-function visible(elem) {
-    return elem.style.display != 'none';
-}
-
-function iterate(iterable, callback) {
-    for (var i=0; i < iterable.length; i++) {
-        val = iterable[i];
-        callback(val);
-    }
-}
-
-function all(iterator) {
-    var result = true;
-    
-    if (!iterator) {
-        return false;
-    }
-    
-    iterate( iterator, function(value) {
-      result = result && value;
-    });
-    return result;
-}
-
-function any (iterator, callback) {
-    var result = true;
-    iterate(iterator, function(value, index) {
-      result = value;
-    });
-    return result;
-  }
-
-function collect(iterator, callback) {
-    var results = [];
-    iterate(iterator, function(value, index) {
-      val = callback(value);
-      results.push(val);
-    });
-    return results;
- }
-
-function classNamesList(elem){
-    try{
-        return elem.className.split(/\s/);
-    }
-    catch(e) {
-        console.log(elem);
-    }
-}
-
-function getFormElements(form_elem) {
-    return Sizzle("input,select,button", form_elem);
-}
-
-function observeEvent(elem, eventName, callback) {
-    if (!elem) {
-        elem=document;
-    }
-    document.addEventListener(eventName, callback, false);
-}
 })();
