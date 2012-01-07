@@ -1638,10 +1638,9 @@ window.Validator = Validator;
                                 
                                 advice = document.createElement("div");
                                 advice.className='validation-advice';
-                                advice.id="advice-' + name + '-' + ValidationObj.getElmID(elm) +'";
+                                advice.id= 'advice-' + name + '-' + ValidationObj.getElmID(elm);
                                 advice.style="display:none";
                                 advice.innerHTML=errorMsg;
-                                //'<div class="validation-advice" id="advice-' + name + '-' + ValidationObj.getElmID(elm) +'" style="display:none">' + errorMsg + '</div>';
                                 switch (elm.type.toLowerCase()) {
                                     case 'checkbox':
                                     case 'radio':
