@@ -1,3 +1,11 @@
+
+This is a fork of Really-Easy-FieldValidation that is meant to be a stand alone without a dependency to Prototype.js.
+For the sake of ease, and to fit my own restrictions, I am including Sizzle -- the engine behind jQuery selections. 
+
+
+
+
+
 Here's a form validation script that is very easy to use.
 
 Instructions
@@ -5,8 +13,6 @@ Instructions
 The basic method is to attach to the form's onsubmit event, read out all the form elements' classes and perform validation if required. If a field fails validation, reveal field validation advice and prevent the form from submitting.
 
 Include the javascript libraries:
-
-<script src="prototype.js" type="text/javascript"></script>
 <script src="validation.js" type="text/javascript"></script>
 You write elements like this:
 
