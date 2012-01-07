@@ -1518,10 +1518,6 @@ externSizzle= Sizzle;
             return destination;
         },
 
-        retVal :function  (x) {
-            return x;
-        },
-
         visible:function (elem) {
             return elem.style.display != 'none';
         },
@@ -1533,30 +1529,32 @@ externSizzle= Sizzle;
             }
         },
 
-        all:function (iterator) {
+        all:function (iterable) {
             var result = true;
     
-            if (!iterator) {
+            if (!iterable) {
                 return false;
             }
     
-            iterate( iterator, function(value) {
+            iterate( iterable, function(value) {
                 result = result && value;
             });
             return result;
         },
 
-        any:function  (iterator, callback) {
+        any:function  (iterable, callback) {
             var result = true;
-            iterate(iterator, function(value, index) {
-                result = value;
+            iterate(iterable, function(value, index) {
+                if (value) {
+                    result = value;
+                }
             });
             return result;
         },
 
-        collect:function (iterator, callback) {
+        collect:function (iterable, callback) {
             var results = [];
-            iterate(iterator, function(value, index) {
+            iterate(iterable, function(value, index) {
                 val = callback(value);
                 results.push(val);
             });
@@ -1604,7 +1602,7 @@ var ValidatorObj = function() {
             this.className = className;
         },
 	test : function(v, elm) {
-            return (this._test(v,elm) && all(this.options, function(p){
+            return (this._test(v,elm) && PhonyPrototypeJs.all(this.options, function(p){
                 return ValidatorObj.methods[p.key] ? ValidatorObj.methods[p.key](v,elm,p.value) : true;
             }));
 	},
@@ -1614,17 +1612,17 @@ var ValidatorObj = function() {
             maxLength : function(v,elm,opt) {return v.length <= opt;},
             min : function(v,elm,opt) {return v >= parseFloat(opt);}, 
             max : function(v,elm,opt) {return v <= parseFloat(opt);},
-            notOneOf : function(v,elm,opt) {return all(iterate(opt), function(value) {
+            notOneOf : function(v,elm,opt) {return PhonyPrototypeJs.all(PhonyPrototypeJs.iterate(opt), function(value) {
                     return v !== value;
                 });},
-            oneOf : function(v,elm,opt) {return iterate(opt).any(function(value) {
+            oneOf : function(v,elm,opt) {return PhonyPrototypeJs.iterate(opt).PhonyPrototypeJs.any(function(value) {
                     return v === value;
                 });},
             'is' : function(v,elm,opt) {return v === opt;},
             isNot : function(v,elm,opt) {return v !== opt;},
             equalToField : function(v,elm,opt) {return v === opt.value;},
             notEqualToField : function(v,elm,opt) {return v !== opt.value;},
-            include : function(v,elm,opt) {return all(iterate(opt),function(value) {
+            include : function(v,elm,opt) {return PhonyPrototypeJs.all(PhonyPrototypeJs.iterate(opt),function(value) {
                     return Validation.get(value).test(v,elm);
                 });}
         }
@@ -1655,7 +1653,7 @@ window.Validator = Validator;
             options : {},
             form : null, 
             init: function(form, options) {
-                this.options = extendObject({
+                this.options = PhonyPrototypeJs.extendObject({
                     onSubmit : true,
                     stopOnFirst : false,
                     immediate : false,
@@ -1667,15 +1665,15 @@ window.Validator = Validator;
                 this.form = Sizzle("#"+form)[0];        
         
                 if(this.options.onSubmit) {
-                    observeEvent(this.form,'submit',onSubmit.bind(this),false);
+                    PhonyPrototypeJs.observeEvent(this.form,'submit',onSubmit.bind(this),false);
                 }
                 if(this.options.immediate) {
                     var useTitles = this.options.useTitles;
                     var callback = this.options.onElementValidate;
             
             
-                    iterate(getFormElements(this.form),function(input) { // Thanks Mike!
-                        observeEvent(input, 'blur', function(ev) {
+                    PhonyPrototypeJs.iterate(PhonyPrototypeJs.getFormElements(this.form),function(input) { // Thanks Mike!
+                        PhonyPrototypeJs.observeEvent(input, 'blur', function(ev) {
                             ValidationObj.validateElm(ev, {
                                 useTitle : useTitles, 
                                 onElementValidate : callback
@@ -1689,7 +1687,7 @@ window.Validator = Validator;
                 var useTitles = this.options.useTitles;
                 var callback = this.options.onElementValidate;
                 if(this.options.stopOnFirst) {
-                    result = all( getFormElements(this.form), function(elm) {
+                    result = PhonyPrototypeJs.all( PhonyPrototypeJs.getFormElements(this.form), function(elm) {
                         return ValidationObj.validateElm(elm,{
                             useTitle : useTitles, 
                             onElementValidate : callback
@@ -1704,7 +1702,7 @@ window.Validator = Validator;
                                         return ValidationObj.validate(elm,{useTitle : useTitles, onElementValidate : callback});
                                     }, this).all();
                      */
-                    result = all( collect( getFormElements(this.form), function(elm) {
+                    result = PhonyPrototypeJs.all( PhonyPrototypeJs.collect( PhonyPrototypeJs.getFormElements(this.form), function(elm) {
                         return ValidationObj.validateElm( elm, {
                             useTitle : useTitles, 
                             onElementValidate : callback
@@ -1726,13 +1724,13 @@ window.Validator = Validator;
                 return result;
             },
             validateElm : function(elm, options){                
-                options = extendObject({
+                options = PhonyPrototypeJs.extendObject({
                     useTitle : false,
                     onElementValidate : function(result, elm) {}
                 }, options || {});
                 
-                var cn = classNamesList(elm);
-                var result = all( collect( cn, function(value) {
+                var cn = PhonyPrototypeJs.classNamesList(elm);
+                var result = PhonyPrototypeJs.all( PhonyPrototypeJs.collect( cn, function(value) {
                     var test = ValidationObj.test(value,elm,options.useTitle);                    
                     options.onElementValidate(test, elm);
                     return test;
@@ -1740,7 +1738,7 @@ window.Validator = Validator;
                 return result;
             },
             reset : function() {
-                iterate(getFormElements(this.form),ValidationObj.reset);
+                PhonyPrototypeJs.iterate(PhonyPrototypeJs.getFormElements(this.form),ValidationObj.reset);
             },
             
             test : function(name, elm, useTitle) {
@@ -1788,15 +1786,15 @@ window.Validator = Validator;
                             }
                         }
                         elm[prop] = true;
-                        removeClassName(elm, 'validation-passed');
-                        addClassName(elm, 'validation-failed');
+                        PhonyPrototypeJs.removeClassName(elm, 'validation-passed');
+                        PhonyPrototypeJs.addClassName(elm, 'validation-failed');
                         return false;
                     } else {
                         var advice = ValidationObj.getAdvice(name, elm);
                         if(advice != null) advice.hide();
                         elm[prop] = '';
-                        removeClassName(elm, 'validation-failed');
-                        addClassName(elm,'validation-passed');
+                        PhonyPrototypeJs.removeClassName(elm, 'validation-failed');
+                        PhonyPrototypeJs.addClassName(elm,'validation-passed');
                         return true;
                     }
                 } catch(e) {
@@ -1805,7 +1803,7 @@ window.Validator = Validator;
             },
             isVisible : function(elm) {
                 while(elm.tagName != 'BODY') {
-                    if(!visible(elm)) return false;
+                    if(!PhonyPrototypeJs.visible(elm)) return false;
                     elm = elm.parentNode;
                 }
                 return true;
@@ -1819,28 +1817,28 @@ window.Validator = Validator;
             reset : function(elm) {
                 elm = Sizzle(elm)[0];
                 var cn = elm.classNames();
-                iterate(cn,function(value) {
+                PhonyPrototypeJs.iterate(cn,function(value) {
                     var prop = '__advice'+value.camelize();
                     if(elm[prop]) {
                         var advice = ValidationObj.getAdvice(value, elm);
                         advice.hide();
                         elm[prop] = '';
                     }
-                    removeClassName(elm,'validation-failed');
-                    removeClassName(elm,'validation-passed');
+                    PhonyPrototypeJs.removeClassName(elm,'validation-failed');
+                    PhonyPrototypeJs.removeClassName(elm,'validation-passed');
                 });
             },
             add : function(className, error, test, options) {
                 var nv = {};
                 nv[className] = Validator(className, error, test, options);
-                extendObject(ValidationObj.methods, nv);
+                PhonyPrototypeJs.extendObject(ValidationObj.methods, nv);
             },
             addAllThese : function(validators) {
                 var nv = {};
-                iterate(validators, function(value) {
+                PhonyPrototypeJs.iterate(validators, function(value) {
                     nv[ value[0] ] = Validator(value[0], value[1], value[2], (value.length > 3 ? value[3] : {}));
                 });
-                extendObject(ValidationObj.methods, nv);
+                PhonyPrototypeJs.extendObject(ValidationObj.methods, nv);
             },
             get : function(name) {
                 return  ValidationObj.methods[name] ? ValidationObj.methods[name] : ValidationObj.methods['_LikeNoIDIEverSaw_'];
@@ -1912,7 +1910,7 @@ window.Validator = Validator;
         ['validate-one-required', 'Please select one of the above options.', function (v,elm) {
             var p = elm.parentNode;
             var options = p.getElementsByTagName('INPUT');
-            return any( options, function(elm) {
+            return PhonyPrototypeJs.any( options, function(elm) {
                 return elem.value;
             });
         }]
