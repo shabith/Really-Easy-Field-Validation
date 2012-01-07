@@ -34,6 +34,9 @@
  *  Released under the MIT, BSD, and GPL Licenses.
  *  More information: http://sizzlejs.com/
  */
+(function() {
+var externSizzle;
+
 (function(){
 
 var chunker = /((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[^\[\]]*\]|['"][^'"]*['"]|[^\[\]'"]+)+\]|\\.|[^ >+~,(\[\\]+)+|[>+~])(\s*,\s*)?((?:.|\r|\n)*)/g,
@@ -56,7 +59,7 @@ var chunker = /((?:\((?:\([^()]+\)|[^()]+)+\)|\[(?:\[[^\[\]]*\]|['"][^'"]*['"]|[
 });
 
 var Sizzle = function( selector, context, results, seed ) {
-	results = results || [];
+        results = results || [];
 	context = context || document;
 
 	var origContext = context;
@@ -1470,15 +1473,15 @@ var posProcess = function( selector, context, seed ) {
 
 // EXPOSE
 
-window.Sizzle = Sizzle;
+externSizzle= Sizzle;
 
 })();
-
 
 (function() { 
 
 var ValidatorObj = function() {
-    return {
+     var Sizzle = externSizzle;
+     return {
         init: function(className, error, test, options) {
             if(typeof test === 'function'){
                 this.options = options ? options : {};
@@ -1535,6 +1538,8 @@ window.Validator = Validator;
                     Event.stop(ev);
                 }
             };
+        
+        var Sizzle = externSizzle;   
         
         return {
             options : {},
@@ -1915,3 +1920,4 @@ function observeEvent(elem, eventName, callback) {
     }
     document.addEventListener(eventName, callback, false);
 }
+})();
