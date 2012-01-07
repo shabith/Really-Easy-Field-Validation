@@ -1598,6 +1598,11 @@ window.Validator = Validator;
                 }
                 if(!result && this.options.focusOnError) {
 //                    TODO: punting on this right now
+                    
+                    
+                    var firstError = Sizzle('.validation-failed', this.form)[0];
+                    firstError.focus()
+                    
 //                    getFormElements(this.form).findAll(function(elm){
 //                        return Sizzle(elm).hasClassName('validation-failed');
 //                    }).first().focus();
@@ -1808,6 +1813,8 @@ window.Validator = Validator;
 })();
 
 function addClassName (elm, className) {
+    console.log("adding " + className + " to "+ elm.id);
+    
     rspace = /\s+/;
     if ( className && typeof className === "string" ) {
         classNames = className.split( rspace );
@@ -1824,10 +1831,12 @@ function addClassName (elm, className) {
                         setClass += classNames[ c ] + " ";
                     }
                 }
-                elm.className;
+                elm.className = setClass;
             }
         }
     }
+    
+    console.log(elm.className);
 }
 
 function removeClassName(elm, className){
